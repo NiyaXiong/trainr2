@@ -1,0 +1,278 @@
+body {
+  font-size: 11pt;
+  font-family: Calibri;
+  /* font-family: Georgia; */
+  color: #000;
+  max-width: 55em;
+  margin: auto;
+  padding: 2em;
+  letter-spacing: .1px;
+  /*
+  line-height: 20px;
+  text-align: justify;
+  text-justify: inter-word;
+  */
+}
+
+/*
+body, td {
+  background-color: white;
+}
+*/
+
+table {
+  margin: auto;
+  margin-top: 3em;
+  margin-bottom: 3em;
+  border: none;
+  border-collapse: separate;
+  border-spacing: 0 0;
+}
+
+td, tr {
+  padding: 0;
+  margin: 0;
+  /* font: 10pt Calibri; */
+}
+
+p {
+  margin: 5px 15px;
+  padding: 5px 0;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+blockquote {
+  background-color: #f6f6f6;
+  padding: 10px;
+  padding-bottom: 1px;
+}
+
+hr {
+  height: 0;
+  border-bottom: none;
+  border-top-width: thin;
+  border-top-style: dotted;
+  border-top-color: #999999;
+}
+
+dl {
+  margin-left: 0;
+}
+
+dl, dd {
+  margin-bottom: 13px;
+  margin-left: 13px;
+}
+
+ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+ul, li {
+  list-style: circle outside;
+}
+
+code {
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  color: #000;
+  padding: 0;
+}
+
+/* in-line code */
+p > code, li > code {
+  color: #0000aa;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background-color: #f6f6f6;
+  font-size: 90%;
+  padding: 0 2px;
+  font-weight: 400;
+}
+
+pre {
+  font-size: 12px;
+  line-height: 16px;
+  /* white-space: pre-wrap; /* wrap long lines */
+  padding: 10px 20px;
+  border: 1px solid #aaaaaa;
+  border-radius: 5px;
+  width: 85%;
+  margin: auto;
+}
+
+pre .r {
+  /* spacing between r code and printed output */
+  margin-bottom: 10px;
+}
+pre .operator {
+  color: #000000;
+}
+pre .paren {
+  color: #000000;
+}
+pre .literal {
+  color: #2255dd;
+}
+pre .number {
+  color: #2255dd;
+}
+pre .comment {
+  color: #7f7f7f;
+  font-style: italic
+}
+pre .keyword {
+  color: #2255dd;
+  font-weight: bold;
+}
+pre .identifier {
+  color: #000000;
+}
+pre .string {
+  color: #008844;
+}
+
+img {
+  background-color: #ffffff;
+  box-shadow: 2px 2px 12px -5px #aaaabb;
+  margin: 20px 0 10px 0 !important;
+  text-justify: inter-word;
+  /*
+  padding: 10px;
+  max-width: 50em;
+  max-height: 75em;
+  border: 1px solid #dddddd;
+  border-radius: 3px;
+  */
+}
+
+a {
+  color: #6f6f6f;
+  text-decoration: underline dotted;
+}
+a:hover {
+  color: #aaaaaa;
+}
+a:visited {
+  color: #aaaabb;
+}
+a:visited:hover {
+  color: #aaaaaa;
+}
+a[href^="http:"] {
+  text-decoration: underline dotted;
+}
+a[href^="https:"] {
+  text-decoration: underline dotted;
+}
+
+h1, h6 {
+  text-align: center;
+  text-justify: inter-word;
+}
+h2 {
+  font-size: 13pt !important;
+  width: 75%;
+  padding-top: 10px;
+  border-bottom: 2px solid #ccc;
+}
+h3 {
+  font-size: 11pt !important;
+  width: 75%;
+  padding-top: 10px;
+}
+h4, h5 {
+  font-size: 9pt !important;
+  width: 60%;
+  margin-left: 8px;
+}
+
+#TOC {
+  clear: both;
+  margin: 0 0 10px 10px;
+  padding: 4px;
+  width: 400px;
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+  background-color: #f6f6f6;
+  font-size: 13px;
+  line-height: 16px;
+}
+
+#TOC .toctitle {
+  font-weight: bold;
+  font-size: 15px;
+  margin-left: 5px;
+}
+
+#TOC ul {
+  padding-left: 40px;
+  margin-left: -1.5em;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+#TOC ul ul {
+  margin-left: -2em;
+}
+
+#TOC li {
+  line-height: 16px;
+}
+
+/* rules */
+
+.column-left{
+  float: left;
+  width: 33%;
+  text-align: left;
+}
+.column-center{
+  display: inline-block;
+  width: 33%;
+  text-align: center;
+}
+.column-right{
+  float: right;
+  width: 33%;
+  text-align: right;
+}
+
+.columns-2 {
+  -webkit-columns: 2; /* chrome, safari, opera*/
+  -moz-columns: 2;    /* firefox */
+  columns: 2;
+}
+.columns-3 {
+  -webkit-columns: 3;
+  -moz-columns: 3;
+  columns: 3;
+}
+.sh {
+  font-weight: bold;
+  background-color: #f8f8f8;
+}
+
+figcaption {
+  text-align: justify;
+  text-justify: inter-word;
+  font-size: 90%;
+}
+
+/* overflow / scrolling */
+
+/*
+.scroll-x {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+
+.scroll-y {
+  max-height: 300px;
+  overflow-y: auto;
+}
+*/

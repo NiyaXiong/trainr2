@@ -1,0 +1,171 @@
+---
+title: "statistical computing in **r**<br /><font size=5>(**again**)</font>"
+date: "25 Sep 2019"
+author: "[_source_](https://github.com/raredd/trainr2)"
+output:
+  ioslides_presentation:
+    highlight: kate
+    smaller: yes
+    incremental: no
+---
+
+<style>
+strong {color: #ff0000 !important;}
+</style>
+
+<!--
+
+-->
+
+<div class="notes">
+
+**Notes**  
+- candy  
+- usage  
+
+</div>
+
+## aim
+
+[previous notes](https://github.com/raredd/trainr)
+
+target audience:
+
+  + new MAs in DS (MADS)
+  + casual R/knitr users
+
+goals:
+
+  + eliminate tedious work and improve efficiency
+  + beyond reproducibility
+  + modular, automated programming
+
+## outline
+
+**part I** -- trial planning
+
+  + writing statistical methods
+  + brief intro to common designs
+  + pulling data (very brief)
+
+**part II** -- tutorials
+
+  + organization and management
+  + tools, tips to make statistical life easy
+  + useful packages/tools developed in-house
+
+**part III** -- putting it together
+
+  + reproducible
+  + automated
+  + laziness pays off
+
+## part I - designs and methods
+
+  + common clinical trial designs
+  + writing statistical methods
+  
+see demo - part I (**design**)
+
+## part I - pulling data
+
+(from **inform**)
+
+shell:
+
+```sh
+$ pfprotdata 14096
+/homes/inform/protdata/B14096UID/PRD4
+```
+
+`00-data.sas`
+
+```sas
+%pfcopylib(/homes/inform/protdata/B14096UID/PRD4,
+	       /path/to/project/sasdata/sep2019);
+endsas;
+```
+
+shell:
+
+```sh
+$ cd /path/to/project/sasdata/sep2019
+$ sas 00-data.sas
+```
+
+[cyberduck](https://cyberduck.io/download/) to transfer files
+
+## part II - organization
+
+```
+    ├── data/
+    │   └── data.Rda
+  **├── DESCRIPTION
+    ├── inst/
+    │   ├── docs/
+    │   │   ├── paper.pdf
+    │   │   └── protocol.pdf
+    │   ├── extdata/
+    │   │   ├── csv/
+    │   │   └── sasdata/
+    │   ├── out/
+    │   ├── scripts/
+    │   │   ├── data.sas
+    │   │   └── misc.R
+    │   └── source/
+    │       ├── 00-analysis.Rmd
+    │       ├── 01-data.Rmd
+    │       └── 02-model.Rmd
+  **├── man/
+    │   └── function-documentation.Rd
+  **├── NAMESPACE
+    ├── NEWS
+  **├── R/
+    │   └── functions.R
+    ├── README.md
+    └── vignettes/
+```
+
+## part II - packages and tools
+
+  + [desmon](https://github.com/raredd/desmon) - design and monitoring
+  
+  + [desmon2](https://github.com/raredd/desmon2) - design and monitoring
+  
+  + [htmlTable](https://github.com/gforge/htmlTable) - tables
+  
+  + [gtsummary](https://github.com/ddsjoberg/gtsummary) - tables
+
+  + [in-line coding](https://rmarkdown.rstudio.com/lesson-4.html)
+
+## part II - packages and tools
+
+see demo - part II (**tutorial**)
+
+## part III - analysis and reporting
+
+combine previous pieces into useful output
+
+strive also for automation, not just reproducibility
+
+  + reproducibility = same data + same code = same result
+  + automation = flexible, modular results
+  + generalize your tools so they may be recycled
+
+## part III - knitr
+
+see demo - part III (**analysis**)
+
+## part III - warning
+
+do not trust anyone's work, especially your own
+
+  + check and double check your output
+  + look for bugs, fix edge cases
+  + refine and improve
+
+## two last things
+
+1) learn [`grep`](https://www.tutorialspoint.com/unix_commands/grep.htm), and
+
+2) become at least proficient with [regular expressions](https://github.com/raredd/regex)

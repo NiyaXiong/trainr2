@@ -1,0 +1,88 @@
+```{r data, include=FALSE}
+## scaling time-to-event data
+tte_factor <- c(years = 365.242)
+tte_factor <- c(months = 30.437)
+
+
+path <- system.file(package = 'trainr2')
+
+
+f_dt <- function(x) {
+  as.Date(x, origin = '1970-01-01')
+}
+
+# ## read in all csv files in dir
+lf <- list.files(file.path(path, 'extdata', 'csv'), full.names = TRUE,
+                 pattern = '\\.csv')
+l_dat <- lapply(lf, function(x) {
+  x <- read.csv(x, stringsAsFactors = FALSE, strip.white = TRUE, header = TRUE)
+  x <- x[!x$id %in% rm_pt, ]
+  
+  x
+})
+names(l_dat) <- gsub('\\.csv', '', basename(lf))
+
+
+## merge all except tox data
+dat_all <- rawr::merge2(l_dat[!grepl('tox|lab', names(l_dat))], by = 'id', all = TRUE)
+
+
+dat <- dat0 <- within(dat_all, {
+  ## format dates
+  dt_dob    <- dmy(d_dob, m_dob, y_dob)
+  dt_reg    <- dmy(d_reg, m_reg, y_reg)
+  dt_resp   <- dmy(d_resp, m_resp, y_resp)
+  dt_status <- dmy(d_status, m_status, y_status)
+  dt_fwup   <- dmy(d_fwup, m_fwup, y_fwup)
+  dt_lastcontact <- f_dt(ifelse('Dead' %in% status, dt_status, dt_fwup))
+  
+  
+  ## calculate some useful stuff
+  subtype <- factor(subtype)
+  stage <- as.character(as.roman(stage))
+  age_dx <- floor(as.numeric(dt_reg - dt_dob) / 365.242)
+  age_cat <- cut(age_dx, breaks = c(-Inf, 50, 70, Inf),
+                 ordered_result = TRUE,
+                 labels = c(sprintf('%s - 50', min(age_dx)),
+                            '51 - 70', sprintf('71 - %s', max(age_dx))))
+  
+  ecog_cat <- factor(ecog, ordered = TRUE)
+  resp_cat <- factor(resp, c('CR', 'PR', 'MR', 'SD', 'PD'), ordered = TRUE)
+  
+  
+  ## ipi factors: age > 60, ps > 1, elevated ldh, ens > 1, stage 3/4
+  age_ipi  <- c('&le; 60','&gt; 60')[(age_dx > 60) + 1L]
+  ecog_ipi <- c('&le; 1','&gt; 1')[(ecog > 1) + 1L]
+  ldh_ipi  <- ldh
+  ens_ipi  <- c('&le; 1','&gt; 1')[(ens > 1) + 1L]
+  stage_ipi <- c('Stage I/II','Stage III/IV')[(stage %in% c('III', 'IV')) + 1L]
+  
+  ipi <- psum(age_dx > 60, ecog > 1, ldh %in% 'Elevated',
+              ens > 1, stage %in% c(3, 4))
+  ipi_risk <- rawr::combine_levels(
+    ipi,
+    list('Low (0-1)' = 0:1, 'Low-Int (2)' = 2, 'High-Int (3)' = 3, 'High (4-5)' = 4:5)
+  )
+  ipi_risk <- factor(ipi_risk, c('Low (0-1)', 'Low-Int (2)', 'High-Int (3)', 'High (4-5)'),
+                     ordered = TRUE)
+  
+  
+  ## time-to-event endpoints
+  os_ind <- +grepl('Dead', status)
+  dt_os <- f_dt(ifelse(os_ind, dt_status, dt_lastcontact))
+  
+  ttp_ind <- +grepl('PD|Prog', resp)
+  pfs_ind <- +(ttp_ind | os_ind)
+  dt_pfs <- f_dt(ifelse(ttp_ind, dt_resp, dt_os))
+  
+  os_time <- as.numeric(dt_os - dt_reg) / tte_factor
+  pfs_time <- as.numeric(dt_pfs - dt_reg) / tte_factor
+})
+
+
+## add tox info
+l_dat$tox <- cbind(
+  l_dat$tox,
+  rawr::match_ctc(l_dat$tox$tox_code)[, c('tox_desc','tox_cat')]
+)
+```

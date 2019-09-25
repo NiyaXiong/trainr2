@@ -1,0 +1,192 @@
+---
+output:
+  html_document:
+    css: ./knitr.css
+    fig_caption: yes
+    highlight: default
+    keep_md: no
+    number_sections: no
+    theme: journal
+    toc: yes
+---
+
+part 1 - trial planning tools
+
+```{r}
+## null and alternative
+p0 <- 0.1
+pa <- 0.3
+
+
+## misc functions
+
+bin1samp_power <- function(p0, pa, n, r) {
+  bin1pow_ <- function(n, p, r) {
+    sum(dbinom(seq(r, n), n, p))
+  }
+  
+  c(type1 = bin1pow_(n, p0, r), type2 = 1 - bin1pow_(n, pa, r))
+}
+
+twostg_power <- function(p0, pa, n1, n2, r1, r2) {
+  nul <- desmon::twostg(n1, n2, p0, r1, r2)$prob
+  alt <- desmon::twostg(n1, n2, pa, r1, r2)$prob
+  
+  c(Pr.stop1.H0 = nul[[2L]], Pr.stop1.H1 = alt[[2L]],
+    type1 = 1 - nul[[1L]], type2 = alt[[1L]],
+    E.tot.n.H0 = n1 + n2 * (1 - nul[[2L]]),
+    E.tot.n.H1 = n1 + n2 * (1 - alt[[2L]]))
+}
+
+dlt_table <- function(prob, digits = 2L) {
+  res <- sapply(prob, function(pr) {
+    dbinom(0L, 3L, pr) + dbinom(0L, 3L, pr) * dbinom(1L, 3L, pr)
+  })
+  
+  res <- rbind(
+    'Pr(DLT)' = prob,
+    'Pr(Escalation)' = res
+  )
+  
+  fmt <- sprintf('%%.%sf', digits)
+  res[] <- sprintf(fmt, res)
+  
+  res
+}
+
+f <- function(x) {
+  cat('\n')
+  sprintf('95%% CI: %0.2f - %0.2f, width: %0.2f', x[1L], x[2L], diff(x[1:2]))
+}
+```
+
+## `desmon` package
+
+```{r, eval=FALSE}
+## to install:
+install.packages('devtools')
+devtools::install_github('raredd/desmon')
+```
+
+**`desmon`**
+
+>Performs various calculations related to design of studies with either failure time or binary endpoints, and also functions to facilitate monitoring and analysis of such studies, including group sequential studies with failure time endpoints and two stage and randomized phase II studies.
+
+Commonly-used functions:
+
+- one-sample: `bin1samp`, `binci`, `onearm`
+- two-stage: `simon`, `twostg`, `twocon`
+- two proportion: `b2p`, `b2n`
+- time-to-event: `surv1samp`, `seqopr`
+- log-rank power: `powlgrnk`, `powlgrnk6`
+
+## Designs
+
+### 3+3
+
+```{r, results='hold'}
+## probability of DLT
+prob <- c(5, 1:5 * 10) / 100
+
+dlt_table(prob)
+
+n <- 3 + 10
+f(desmon::binci(n / 2, n))
+```
+
+### one-sample, one-stage
+
+```{r, results='hold'}
+des <- desmon::bin1samp(p0, pa)
+des
+
+n <- des[['n']]
+f(desmon::binci(n / 2, n))
+```
+
+### simon optimal
+
+```{r, results='hold'}
+des <- desmon::simon(p0, pa)$designs
+des
+
+n <- as.list(des[1L, ])
+f(desmon::twocon(n$n1, n$n2, n$r1, round((n$n1 + n$n2) / 2)))
+
+## compare
+f(desmon::binci((n$n1 + n$n2) / 2, n$n1 + n$n2))
+
+n$n1 + n$n2 * (1 - n$Pstop1.H0)
+```
+
+### one-sample, two-stage
+
+```{r, results='hold'}
+twostg_power(p0, pa, 15, 20, 1, 6)
+
+f(desmon::twocon(15, 15, 1, (15 + 15) / 2))
+
+## compare
+f(desmon::binci((15 + 20) / 2, 15 + 20))
+```
+
+### two-sample
+
+```{r, results='hold'}
+des <- ceiling(desmon::b2n(pa, p0, power = 0.9))
+des
+
+desmon::b2p(pa, p0, des[1L] / 2, des[1L] / 2)
+
+f(desmon::binci(des[1L] / 4, des[1L] / 2))
+f(desmon::binci(des[1L] / 2, des[1L]))
+```
+
+## Statistical considerations
+
+### 3+3
+
+```{r, results='asis'}
+desmon2::mtd_text(prob, ndose = 3, expansion = 12)
+```
+
+### one-sample, one-stage
+
+```{r, results='asis'}
+desmon2::bin1samp_text(p0, pa, outcome = 'overall response rate (ORR)')
+```
+
+### simon optimal
+
+```{r, results='asis'}
+desmon2::simon_text(p0, pa, outcome = 'overall response rate (ORR)')
+```
+
+### one-sample, two-stage
+
+```{r, results='asis'}
+desmon2::twostg_text(p0, pa, 15, 20, 1, 6, outcome = 'overall response rate (ORR)')
+```
+
+### two-sample
+
+```{r, results='asis'}
+desmon2::b2p_text(pa, p0, power = 0.9, r = 0.75, arms = c('treatment', 'placebo'))
+```
+
+## todo
+
+```{r, eval=FALSE}
+## improve
+b2p_text(...)
+
+## add
+surv1samp_text(...)
+seqopr_text(...)
+```
+
+---
+
+```{r, eval=TRUE, include=TRUE, comment=NA}
+sessionInfo()
+```

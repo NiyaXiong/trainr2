@@ -1,0 +1,203 @@
+---
+output:
+  html_document:
+    css: ./knitr.css
+    fig_caption: yes
+    highlight: default
+    keep_md: no
+    number_sections: no
+    theme: journal
+    toc: yes
+runtime: shiny
+---
+
+part 2 - misc
+
+```{r, message=FALSE, echo=FALSE}
+library('shiny')
+library('rawr')
+library('survival')
+library('cmprsk2')
+library('htmlTable')
+```
+
+## Tables
+
+### Basic tables
+
+```{r}
+library('htmlTable')
+htmlTable(head(mtcars))
+
+
+ht <- htmlTable(
+  head(mtcars),
+  caption = 'Table 1.',
+  tfoot = '<font size=1 color=red>Footnote.</font>', 
+  cgroup = c('', 'Header 1<sup>&dagger;</sup>', 'Header 2<sup>&Dagger;</sup>'),
+  n.cgroup = c(2, 4, 5),
+  tspanner = c('Group 1', 'Group 2'), n.tspanner = c(2, 4),
+  css.cell = 'padding: 0px 5px 0px; white-space: nowrap;'
+)
+ht
+```
+
+### Exporting
+
+```{r}
+## function to write a table to file
+write_htmlTable <- function(x, file = '') {
+  x <- gsub('gr[ea]y\\s*(?=;)', '#bebebe', x, perl = TRUE)
+  x <- paste('<!DOCTYPE html>\n<html>\n<body>', x, '</body>\n</html>', sep = '\n')
+  if (!is.character(file))
+    x else cat(x, file = file)
+}
+
+write_htmlTable(ht, file = '~/desktop/table.html')
+```
+
+## In-line printing
+
+### generic
+
+```{r}
+iprint(1:4)
+```
+
+### for summarizing data...
+
+```{r}
+countr(mtcars$gear, frac = TRUE)
+
+intr(mtcars$mpg)
+
+intr(mtcars$mpg, conf = 0.95)
+```
+
+### for statistics...
+
+```{r}
+inl_fisher(mtcars$am, mtcars$vs)
+
+s <- survfit(Surv(time, status) ~ 1, colon)
+surv_median(s, ci = TRUE)
+surv_prob(s, times = c(1000, 2000), percent = TRUE, ci = TRUE)
+
+c(binconr(18, 20, frac = TRUE))
+```
+
+## Kaplan-Meier
+
+```{r, fig.width=9, fig.height=12, fig.show='hide'}
+## create *_ind, *_time variables, see details in ?rawr::kmplot
+colon2 <- within(colon[duplicated(colon$id), ], {
+  # dt_pfs <- ...
+  pfs_time <- time
+  pfs_ind  <- status
+  sex <- factor(sex, 0:1, c('Female', 'Male'))
+})
+
+# survfit(Surv(pfs_time, pfs_ind) ~ rx, data = colon2)
+
+# par(mfrow = c(2, 1))
+rawr::kmplot_by(
+  'rx', 'pfs', colon2,
+  # by = 'sex', single = FALSE,
+  strata_lab = FALSE, bty = 'l',
+  sub = 'Obs(ervation), Lev(amisole), Lev+5-FU',
+  atrisk.col = TRUE, median = TRUE, hr_text = TRUE,
+  pw_test = TRUE
+)
+```
+
+```{r, echo=FALSE}
+shinyApp(
+  ui = fluidPage(
+    selectInput(
+      'atrisk.type', 'Table:', choices = eval(formals(kmplot)$atrisk.type)
+    ),
+    checkboxGroupInput(
+      'extra', 'Additional options:', selected = 'details',
+      c(
+        'Cox Regression' = 'cox',
+        Median = 'median',
+        'Pair-wise tests' = 'pw',
+        'Test details' = 'details',
+        'Color lines' = 'color',
+        By = 'by'
+      )
+    ),
+    
+    plotOutput('kmplot')
+  ),
+
+  server = function(input, output) {
+    output$kmplot = renderPlot({
+      if ('by' %in% input$extra)
+        par(mfrow = c(2, 1))
+      rawr::kmplot_by(
+        'rx', 'pfs', colon2, strata_lab = FALSE, sub = '', bty = 'l',
+        by = if ('by' %in% input$extra) 'sex' else NULL,
+        single = !('by' %in% input$extra),
+        atrisk.col = 'color' %in% input$extra,
+        test_details = 'details' %in% input$extra,
+        median = 'median' %in% input$extra,
+        hr_text = 'cox' %in% input$extra,
+        pw_test = 'pw' %in% input$extra,
+        atrisk.type = input$atrisk.type
+      )
+    })
+  },
+
+  options = list(height = 700)
+)
+```
+
+## Competing risks
+
+```{r}
+transplant <- within(transplant, {
+  event_ind <- as.integer(factor(event)) - 1L
+  sex <- factor(sex, c('f', 'm'), c('Female', 'Male'))
+})
+
+cov <- model.matrix(~ sex + abo, transplant)[, -1L, drop = FALSE]
+lapply(1:3, function(failcode) {
+  with(transplant, {
+    crr(futime, event_ind, cov1 = cov, cengroup = 0, failcode = failcode)
+  })
+})
+
+
+cr <- crr2(Surv(futime, event(censored) == death) ~ sex + abo, transplant,
+           cox = Surv(futime, event == 'death') ~ sex + abo)
+cr
+
+summary(
+  cr, html = TRUE, n = TRUE, ref = TRUE,
+  htmlArgs = list(
+    caption = 'Table 1: Competing risks.',
+    rnames = with(transplant, c(levels(sex), levels(abo)))
+  )
+)
+
+ci <- cuminc2(Surv(futime, event(censored) == death) ~ sex, transplant)
+ci
+cuminc_pairs(ci, method = 'fdr')$p.value
+```
+
+```{r}
+ciplot(ci, events = FALSE)
+ciplot_by('sex', time = 'futime', event = 'event', data = transplant)
+```
+
+```{r, fig.height=10, fig.width=12}
+ciplot_by('sex', time = 'futime', event = 'event',
+          data = transplant, by = 'abo', single = FALSE)
+```
+
+---
+
+```{r, eval=TRUE, include=TRUE, comment=NA}
+sessionInfo()
+```

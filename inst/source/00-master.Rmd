@@ -1,0 +1,300 @@
+---
+output:
+  html_document:
+    css: ./knitr.css
+    fig_caption: yes
+    highlight: default
+    keep_md: no
+    number_sections: no
+    theme: journal
+    toc: yes
+---
+
+part 3 - reporting
+
+<style>
+tr,td {
+  white-space: nowrap;
+  padding: 0px 5px 0px;
+}
+</style>
+
+```{r, message=FALSE}
+library('trainr2')
+
+## remove these patients from analyses
+rm_pt <- c(2, 5, 15)
+rm_pt <- NULL
+
+## write tables to file
+write_table <- FALSE
+```
+
+```{r frontmatter, child="./01-frontmatter.Rmd", include=FALSE}
+```
+
+```{r frontmatter, child="./02-data.Rmd", include=FALSE}
+```
+
+```{r}
+## data to use for analyses
+use <- dat
+tox <- l_dat$tox
+
+## number/percent formatter: xx (yy% of)
+nn <- function(x) {
+  n <- sum(x)
+  sprintf('%s (%s%% of)', n, round(n / length(x) * 100))
+}
+```
+
+## Administrative Information
+
+From `r paste0(range(format(use$dt_reg, '%B %Y')), collapse = ' to ')`, `r nrow(use)` patients were enrolled on study at `r countr(use$site)`. As per inclusion criteria, all patients were newly diagnosed diffuse large B-cell lymphoma (DLBCL). Per protocol patients were analyzed by subtype, activated B cell-like (ABC) and germinal center B cell–like (GCB).
+
+`r length(unique(tox$id))` patients received at least one dose of study treatment and were included in toxicity and response analyses.
+
+## Patient Characteristics
+
+Patient characteristics are presented in Table 1. `r nn(use$sex %in% 'Male')` patients enrolled were male. The median age at diagnosis was `r intr(use$age_dx)`. `r nn(use$ipi > 1)` patients had International Prognostic Index (IPI) of two or more.
+
+```{r}
+byvar <- c(Subtype = 'subtype')
+vars <- c(
+  'Age at diagnosis' = 'age_dx',
+  'Age at diagnosis' = 'age_cat',
+  Site = 'site',
+  Sex = 'sex',
+  Race = 'race',
+  Ethnicity = 'ethnic',
+  # 'ECOG PS' = 'ecog_cat',
+  Age = 'age_ipi',
+  'ECOG PS' = 'ecog_ipi',
+  'Disease stage' = 'stage_ipi',
+  LDH = 'ldh',
+  ENS = 'ens_ipi',
+  IPI = 'ipi_risk'
+)
+
+ht <- tabler_stat2(
+  use, vars, byvar,
+  group = c('IPI Factors' = 'ethnic', 'IPI Risk Score' = 'ens_ipi'),
+  tfoot2 = paste0('Abbreviations: IPI, international prognostic score; ',
+                  'ECOG PS, Eastern Cooperative Oncology Group ',
+                  'performance score.'),
+  htmlArgs = list(
+    caption = 'Table 1: Patient characteristics.',
+    css.tspanner = 'font-weight: 900; text-align: center;'
+  )
+)
+structure(ht, class = 'htmlTable')
+
+if (write_table)
+  rawr::write_htmlTable(ht, file = '~/desktop/t1.html')
+```
+
+## Baseline labs
+
+```{r}
+blabs1 <- merge(l_dat$blabs, use[, c('id', byvar)])
+vars <- c('ltd', 'wbc', 'hgb', 'platelets', 'neutrophils', 'lymphocytes', 'monocytes')
+names(vars) <- vars
+```
+
+Lab results at study entry are presented in Table 2. The median sum of largest tumor diameters at baseline was `r median(blabs$ltd)` for all patients and `r paste0(round(with(blabs, tapply(ltd, use$subtype, median)), 1), collapse = ' and ')` for ABC and GCB suptype patients, respectively (`r rawr::inl_wilcox(blabs1$ltd, blabs1$subtype, details = FALSE)`).
+
+```{r}
+ht <- tabler_stat2(
+  blabs1, vars, byvar, correct = 'fdr',
+  htmlArgs = list(
+    caption = 'Table 2: Baseline labs with p-values corrected for multiple testing.'
+  )
+)
+structure(ht, class = 'htmlTable')
+
+if (write_table)
+  rawr::write_htmlTable(ht, file = '~/desktop/t2.html')
+```
+
+## Treatment summary
+
+## Treatment toxicities
+
+```{r}
+tox <- within(tox, {
+  tox_grade <- factor(tox_grade, 1:4)
+})
+
+## highest tox grade per patient per toxicity
+worst <- tox_worst(tox, 'id', 'tox_desc', 'tox_grade')
+worst <- merge(worst, use[, c('id', 'subtype')])
+
+worst <- within(worst, {
+  worst_overall <- ave(as.numeric(tox_grade), id, FUN = max)
+})
+
+
+top <- sort(table(worst$tox_desc), decreasing = TRUE)
+top <- head(top, 5L)
+
+tt <- worst$worst_overall[!duplicated(worst$id)]
+```
+
+Toxicities attributed to study treatment (possible, probable, definite) are presented in Tables 3A and 3B. All patients received at least on dose of study treatment and were included in toxicity summary. The most common toxicities on study were `r countr(top, n = nrow(use))`.
+
+The highest grades experienced among all patients regardless of toxicity were `r countr(tt, frac = TRUE)`.
+
+```{r, fig.width=10, fig.height=5}
+tbl <- with(worst, {
+  ftable(Category = tox_cat, Description = tox_desc, Grade = tox_grade)
+})
+plotr::toxplot(
+  tbl, total = nrow(use)
+)
+box('outer')
+```
+
+```{r}
+tbl <- tabler_by2(
+  worst, c('tox_cat', 'tox_desc'), 'tox_grade', zeros = '-',
+  order = FALSE, pct = TRUE, pct.sign = FALSE, pct.total = TRUE,
+  n = nrow(use)
+)
+idx <- grepl('desc|Total', colnames(tbl))
+colnames(tbl)[idx] <- c(
+  'Description', sprintf('Total<br /><font size=1>N=%s</font>', nrow(use))
+)
+
+ht <- htmlTable(
+  tbl, align = 'lc', rowlabel = 'Category',
+  cgroup = c('', 'Highest grade'), n.cgroup = c(2, nlevels(worst$tox_grade)),
+  caption = sprintf('Table 3A: Highest grade toxicity experienced for n=%s patients.',
+                    nrow(use))
+)
+structure(ht, class = 'htmlTable')
+```
+
+```{r}
+tbl <- tabler_by2(
+  worst, 'tox_desc', 'tox_grade', stratvar = byvar, zeros = '-',
+  order = TRUE, pct = TRUE, pct.sign = FALSE, pct.total = TRUE,
+  n = table(use[, byvar])
+)
+idx <- grepl('Total', colnames(tbl))
+colnames(tbl)[idx] <- rawr:::get_tabler_stat_n(use[, byvar], use_labels = FALSE)
+
+ht <- htmlTable(
+  tbl, align = 'c', cgroup = c('', levels(use[, byvar])),
+  n.cgroup = c(1, nlevels(worst$tox_grade) + 1L, nlevels(worst$tox_grade) + 1L),
+  caption = sprintf('Table 3B: Highest grade toxicity experienced for n=%s patients,
+                    by %s', nrow(use), names(byvar))
+)
+structure(ht, class = 'htmlTable')
+```
+
+## Outcome summary
+
+### Response to treatment
+
+The primary outcome was overall response rate (MR, PR, CR) at end of treatment. All patients received at least one dose of study treatment and were included in response assessment, and all patients were evaluated for EOT response.
+
+The overall response rate of MR or better was `r binconr(sum(grepl('[CPM]R', use$resp_cat)), nrow(use), frac = TRUE)`. `r nn(grepl('[CP]R', use$resp_cat))` patients experienced a PR or better at EOT (`r binconr(sum(grepl('[CP]R', use$resp_cat)), nrow(use), est = FALSE)`). `r nn(grepl('CR', use$resp_cat))` patients experienced a CR or better (`r binconr(sum(grepl('CR', use$resp_cat)), nrow(use), est = FALSE)`).
+
+```{r}
+sp <- split(use$resp_cat, use[, byvar])
+rr <- 3:2
+
+l <- list(
+  Subtype = t(sapply(sp, function(x)
+    tabler_resp(x, rr, frac = TRUE, show_conf = FALSE))),
+  Overall = t(tabler_resp(use$resp_cat, rr, frac = TRUE, show_conf = FALSE))
+)
+
+
+ht <- rawr::combine_table(
+  l, n.cgroup = c(nlevels(use$resp_cat), length(rr)),
+  cgroup = c('Response', 'Outcome'),
+  caption = 'Table 4: Overall response rate.'
+)
+structure(ht, class = 'htmlTable')
+```
+
+### Time-to-event
+
+```{r}
+## survival models and plots
+fw  <- survfit(Surv(os_time, !os_ind) ~ 1, use)
+os  <- survfit(Surv(os_time, os_ind) ~ 1, use)
+pfs <- survfit(Surv(pfs_time, pfs_ind) ~ 1, use)
+
+pfs_lr <- survfit(Surv(pfs_time, pfs_ind) ~ subtype, use)
+```
+
+Median follow-up was `r surv_median(fw)` `r names(tte_factor)`. Patients were followed for progression-free and overall survival; results are shown in Table 5.
+
+The median OS and PFS were `r surv_median(os, ci = TRUE)` and `r surv_median(pfs, ci = TRUE)`, respectively. 12- and 24-month PFS were `r surv_prob(pfs, c(12, 24), percent = TRUE)` percent.
+
+Median PFS by subtype was `r surv_median(pfs_lr)` `r names(tte_factor)`, `r rawr:::lr_text(pfs_lr, details = FALSE)`.
+
+```{r}
+times <- 0:4 * 6
+l  <- list(
+  'Progression-free survival' = surv_table(pfs, times = times),
+  'Overall survival' = surv_table(os, times = times)
+)
+
+ht <- rawr::combine_table(
+  l, caption = 'Table 5: Progression-free and overall survival.'
+)
+structure(ht, class = 'htmlTable')
+```
+
+```{r, fig.width=12, fig.height=8}
+## survival plot wrapper
+kmby <- function(..., xlim = NULL, median = NULL, strata_lab = FALSE,
+                 mar = NULL, xlab = NULL) {
+  yat <- seq(0, 1, by = 0.5)
+  res <- rawr::kmplot_by(
+    ..., lwd.surv = 3, bty = 'l', xlim = c(0, 30),
+    # args.survfit = list(conf.int = 0.90),
+    mar = mar %||% c(6, 7, 2, 2),
+    median = median %||% 30, digits.median = 1L, strata_lab = strata_lab,
+    xlab = xlab %||% sprintf('Time from registration in %s', names(tte_factor)),
+    yaxis.lab = yat * 100, yaxis.at = yat , yaxs = 'i'
+  )
+  box('outer')
+  
+  invisible(res)
+}
+
+
+par(mfrow = c(2, 2), bty = 'l')
+kmby(pfs, ylab = 'PFS probability', add = TRUE)
+kmby(os, ylab = 'OS probability', add = TRUE)
+
+kmby('subtype', 'pfs', use, sub = '', add = TRUE)
+kmby('subtype', 'os', use, sub = '', add = TRUE)
+
+box('outer')
+```
+
+## Off treatment/off study
+
+---
+
+```{r, eval=TRUE, include=TRUE, comment=NA}
+sessionInfo()
+```
+
+## References
+
+```{r, results='asis'}
+print(citation(), style = 'html')
+
+print(citation(package = 'survival'), style = 'html')
+```
+
+## Appendix
+
+```{r append, child='./99-append.Rmd'}
+```

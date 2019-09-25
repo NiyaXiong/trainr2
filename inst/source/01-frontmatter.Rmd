@@ -1,0 +1,59 @@
+```{r, include=FALSE}
+library('knitr')
+
+opts_knit$set(
+  eval.after = 'fig.cap', progress = TRUE,
+  width = 80, verbose = TRUE, par = TRUE
+)
+
+## global chunk options:
+opts_chunk$set(
+  cache = FALSE, fig.align = 'center', dev = 'png', warning = FALSE,
+  fig.width = 10, fig.height = 8, echo = FALSE, message = FALSE
+)
+```
+
+###### GCB vs non-GCB in DLBCL (15-000)
+
+###### A comparison of clinical outcomes by genetic subtype in patients with newly diagnosed DLBCL
+
+###### Most recent compile: `r as.character(format(Sys.Date(), format = '%d %B %Y'))`
+
+###### Department of Biostatistics and Computational Biology<br />Dana Farber Cancer Institute
+
+###### Contact:<br />Overall PI: Dr. Doctor, <a href="mailto:dr_doctor@dfci.harvard.edu?subject=trainr2">email</a><br />CRC: Contact Person, <a href="mailto:contact@partners.org?subject=trainr2">email</a><br />
+
+###### Statisticians:<br />Robert Redd, <a href="mailto:rredd@jimmy.harvard.edu?subject=trainr2">email</a>
+
+###### <font size = 1>All analyses were performed using `r R.Version()$version.string` and packages `survival` v`r packageVersion('survival')` for time-to-event analyses; and `knitr` v`r packageVersion('knitr')` for reproducible research.</font>
+
+## Design
+
+Summarize the design of the study: one- or two-stage with sample size and statistical considerations.
+
+### Study objectives
+
+The primary outcome was overall response rate (ORR).
+
+The secondary outcomes were:
+
+  - rate of PR, CR or better  
+  - progression-free survival  
+  - overall survival
+  - safety
+
+### Statistical methods
+
+All subjects will be evaluable for toxicity from the time of their first treatment with study drug.
+
+Overall Survival (OS) will be measured from date of protocol therapy initiation until date of death and characterized using the Kaplan-Meier method.
+
+Progression-free Survival (PFS) will be measured from date of protocol therapy initiation until date of documentation of progressive disease or death from any cause and calculated using the Kaplan-Meier method.
+
+Time-to-event endpoints are estimated using the method of Kaplan and Meier with 95% confidence intervals calculated using Greenwood’s method of variance estimation. Median follow-up is calculated using the reverse Kaplan-Meier method.
+
+Responses to study treatment were reported as proportions with 95% exact binomial confidence intervals. Continuous measures summarized as median and range, and categorical variables are summarized as proportions.
+
+Nominal variables were tested for association with continuous and other categorical variables using Wilcoxon rank-sum (or Kruskal-Wallis for three or more groups) or Fisher’s exact tests, respectively. Ordinal variables were tested using trend tests (Cuzick, KW, JT) where appropriate.
+
+Statistical analyses were performed using `r R.Version()$version.string`.
