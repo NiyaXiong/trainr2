@@ -2,15 +2,6 @@ Better practices for statistical computing in r (v2)
 
 25 Sep 2019
 
-View the [slides](http://htmlpreview.github.io/?https://github.com/raredd/trainr/blob/master/inst/pres/pres.html#1)
-
-- Use the arrow keys or click to the left/right of the slides to navigate.
-
-- Press "o" to see an overview of the slides, "w" to toggle widescreen, "f" for fullscreen
-
-- Press "p" to show presenter notes, "h" to enable code highlight mode
-
-
 [Download a zip](https://github.com/raredd/trainr2/archive/master.zip) file of this repo or clone to your computer:
 
 ```sh
